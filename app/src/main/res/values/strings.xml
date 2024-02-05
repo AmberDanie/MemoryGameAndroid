@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Memory game</string>
+    <string name="game_title">Memorize!</string>
+    <string name="start">Play</string>
+    <string name="game_description">Every level, a number of tiles will flash blue.
+        Memorize them, and pick them again after the tiles are reset!</string>
+    <string name="current_level">Level %d</string>
+    <string name="exit">Exit</string>
+    <string name="play_again">Play Again</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="you_finished">You finished %d levels!</string>
+</resources>
