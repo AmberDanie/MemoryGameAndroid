@@ -1,83 +1,110 @@
 package com.example.memorygame
 
-import android.widget.Button
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.memorygame.ui.theme.blue
+import com.example.memorygame.ui.theme.darkBlue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.random.Random.Default.nextInt
 
 class GameViewModel: ViewModel() {
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
+    private var colorMapCopy = _uiState.value.currentStateMap.toMutableList()
 
-    fun checkUserPick(chosenButtonIndex: Int): Boolean {
-        if (chosenButtonIndex == _uiState.value.currentLevelPath[_uiState.value.nextButtonIndex]) {
-            if (_uiState.value.nextButtonIndex == _uiState.value.currentLevel) {
+    fun checkUserPick(chosenButtonIndex: Int) {
+        if (colorMapCopy[chosenButtonIndex] == 1) {
+            if (_uiState.value.countOfChosen == _uiState.value.currentLevel - 1) {
                 nextLevel()
             }
             else {
                 _uiState.update { currentState ->
                     currentState.copy(
-                        nextButtonIndex = _uiState.value.nextButtonIndex.inc()
+                        countOfChosen = _uiState.value.countOfChosen.inc(),
                     )
                 }
+                colorMapCopy[chosenButtonIndex] = 0
             }
-            return true
         }
         else {
             gameOver()
-            return false
         }
     }
 
-    fun nextLevel() {
+    private fun nextLevel() {
         updateGameState()
+        for (i in 0 until 25) {
+            val colorList = _uiState.value.currentColorMap.toMutableList()
+                colorList[i] = darkBlue
+            if (colorMapCopy[i] == 1) {
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        currentColorMap = colorList.toList()
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            delay(1500)
+            _uiState.update {currentState ->
+                currentState.copy(
+                    currentColorMap = List(25) {blue}
+                )
+            }
+        }
     }
 
-    fun gameOver() {
+    private fun gameOver() {
         _uiState.update { currentState ->
             currentState.copy(
                 isGameOver = true
             )
         }
+
     }
 
-    fun updateGameState() {
-        val path = updatePath()
+    private fun updateGameState() {
+        updatePath()
+        colorMapCopy = _uiState.value.currentStateMap.toMutableList()
         _uiState.update { currentState ->
             currentState.copy(
                 isGameOver = false,
                 currentLevel = currentState.currentLevel.inc(),
-                nextButtonIndex = 0
+                countOfChosen = 0
             )
         }
+
     }
 
-    fun updatePath(): MutableList<Int> {
+    private fun updatePath() {
         while (true) {
-            val pickNext = nextInt(1, 25)
-            if (_uiState.value.currentLevelPath.last() != pickNext) {
-                _uiState.value.currentLevelPath.add(pickNext)
+            val pickNext = nextInt(0, 24)
+            if (_uiState.value.currentStateMap[pickNext] != 1) {
+                val stateList = _uiState.value.currentStateMap.toMutableList()
+                stateList[pickNext] = 1
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        currentStateMap = stateList.toList()
+                    )
+                }
                 break
             }
         }
-        return _uiState.value.currentLevelPath
     }
 
     fun resetGame() {
         val pickNext = nextInt(0, 24)
         println(pickNext)
-        _uiState.value = GameUiState(currentLevel = 1,
-            currentLevelPath = mutableListOf(pickNext),
-            nextButtonIndex = 0,
-            isGameOver = false)
+        _uiState.value = GameUiState(currentLevel = 0,
+            currentStateMap = MutableList(25) { 0 },
+            isGameOver = false,
+            buttonEnabled = false)
+        nextLevel()
+        colorMapCopy = _uiState.value.currentStateMap.toMutableList()
     }
-
 }

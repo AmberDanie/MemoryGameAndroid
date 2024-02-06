@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -37,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.memorygame.ui.theme.MemoryGameTheme
+import com.example.memorygame.ui.theme.lightBlue
 
 @Composable
 fun GameScreen(
@@ -53,23 +55,29 @@ fun GameScreen(
     ) {
         Text(text = stringResource(id = R.string.game_title),
             style = typography.displayLarge, fontFamily = FontFamily.Serif)
-        GameLayout(modifier = modifier,
+        GameLayout(
+            modifier = modifier,
             currentLevel = gameUiState.currentLevel,
-            gameViewModel = gameViewModel)
+            colorMap = gameUiState.currentColorMap,
+            checkInput = {gameViewModel.checkUserPick(it)},
+            buttonsEnabled = !gameUiState.buttonEnabled)
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 32.dp, end = 32.dp, top = 8.dp)
-        ) {
+        )
+        {
             Button(onClick = { gameViewModel.resetGame() },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = gameUiState.isGameOver
+                enabled = gameUiState.buttonEnabled
             ) {
                 Text(
                     text = stringResource(id = R.string.start)
                 )
             }
         }
+
         if (gameUiState.isGameOver) {
             ResultDialog(lastLevel = gameUiState.currentLevel,
                 onPlayAgain = { gameViewModel.resetGame() })
@@ -81,7 +89,9 @@ fun GameScreen(
 fun GameLayout(
     modifier: Modifier = Modifier,
     currentLevel: Int,
-    gameViewModel: GameViewModel
+    checkInput: (Int) -> Unit,
+    colorMap: List<Color>,
+    buttonsEnabled: Boolean
 ) {
     var currentButtonIndex = 0
 
@@ -108,7 +118,9 @@ fun GameLayout(
                     for  (j in 0 until 5) {
                         Card {
                             MemoryButton(currentButtonIndex,
-                                gameViewModel = gameViewModel)
+                                checkInput = checkInput,
+                                colorMap = colorMap,
+                                buttonsEnabled = buttonsEnabled)
                             currentButtonIndex++
                         }
                     }
@@ -123,28 +135,33 @@ fun GameLayout(
 }
 
 @Composable
-fun MemoryButton(buttonIndex: Int,
-    gameViewModel: GameViewModel) {
+fun MemoryButton(
+    buttonIndex: Int,
+    checkInput: (Int) -> Unit,
+    colorMap: List<Color>,
+    buttonsEnabled: Boolean) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val color = if (isPressed) colorScheme.primary else colorScheme.secondary
+    val color: Color = if (isPressed) colorScheme.primary
+        else colorMap[buttonIndex]
 
     Button(
         modifier = Modifier.padding(5.dp),
-        enabled = true,
+        enabled = buttonsEnabled,
         onClick = {
-            gameViewModel.checkUserPick(buttonIndex)
+            checkInput(buttonIndex)
         },
         interactionSource = interactionSource,
         colors = ButtonDefaults.buttonColors(
-            containerColor = color
+            containerColor = color,
+            disabledContainerColor = lightBlue
         )
     ) {}
 }
 
 @Composable
-private fun ResultDialog(
+fun ResultDialog(
     lastLevel: Int,
     onPlayAgain: () -> Unit,
     modifier: Modifier = Modifier
