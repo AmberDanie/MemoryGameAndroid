@@ -98,7 +98,7 @@ class GameViewModel: ViewModel() {
     }
 
     fun resetGame() {
-        val pickNext = nextInt(0, 24)
+        val pickNext = nextInt(0, 25)
         println(pickNext)
         _uiState.value = GameUiState(currentLevel = 0,
             currentStateMap = MutableList(25) { 0 },
