@@ -83,7 +83,7 @@ class GameViewModel: ViewModel() {
 
     private fun updatePath() {
         while (true) {
-            val pickNext = nextInt(0, 24)
+            val pickNext = nextInt(0, 25)
             if (_uiState.value.currentStateMap[pickNext] != 1) {
                 val stateList = _uiState.value.currentStateMap.toMutableList()
                 stateList[pickNext] = 1
@@ -98,8 +98,6 @@ class GameViewModel: ViewModel() {
     }
 
     fun resetGame() {
-        val pickNext = nextInt(0, 25)
-        println(pickNext)
         _uiState.value = GameUiState(currentLevel = 0,
             currentStateMap = MutableList(25) { 0 },
             isGameOver = false,
